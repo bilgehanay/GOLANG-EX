@@ -114,11 +114,11 @@ func (oc *OrderController) DeleteOrder(ctx *gin.Context) {
 }
 
 func (oc *OrderController) RegisterOrderRoutes(rg *gin.RouterGroup) {
-	rg.POST("/order", oc.CreateOrder)
-	rg.GET("/order/:id", oc.GetOrder)
-	rg.GET("/orders/:status", oc.GetOrders)
-	rg.GET("/orders", oc.GetOrders)
-	rg.PUT("/order/:id", oc.UpdateOrder)
-	rg.PUT("/order/status", oc.UpdateStatus)
+	rg.POST("", oc.CreateOrder)
+	rg.GET(":id", oc.GetOrder)
+	rg.GET(":status", oc.GetOrders)
+	rg.GET("", oc.GetOrders)
+	rg.PUT("/:id", oc.UpdateOrder)
+	rg.PUT("/status", oc.UpdateStatus)
 	rg.DELETE("/:id", oc.DeleteOrder)
 }
