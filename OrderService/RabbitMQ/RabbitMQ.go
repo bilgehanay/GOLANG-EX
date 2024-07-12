@@ -35,7 +35,7 @@ func InitRabbitMQ() {
 	}
 }
 
-func PublishMessage(body string) error {
+func PublishMessage(body string, messageType string) error {
 	err := channel.Publish(
 		"",
 		"OrderQueue",
@@ -44,6 +44,7 @@ func PublishMessage(body string) error {
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(body),
+			Type:        messageType,
 		})
 	if err != nil {
 		return fmt.Errorf("failed to publish message: %v", err)

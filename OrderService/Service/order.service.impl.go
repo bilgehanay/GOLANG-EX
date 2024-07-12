@@ -21,34 +21,67 @@ type OrderServiceImpl struct {
 // CreateOrder implements OrderService.
 func (o *OrderServiceImpl) CreateOrder(order *Model.Order) error {
 	neworder := Model.NewOrder(order.UserId, order.Quantity, order.Price)
-	_, err := o.ordercollection.InsertOne(o.ctx, neworder)
-	if err == nil {
-		orderMessage := map[string]interface{}{
-			"user_id":  neworder.UserId.String(),
-			"order_id": neworder.Id.String(),
-		}
 
-		orderMessageBytes, err := json.Marshal(orderMessage)
-		if err != nil {
-			return err
-		}
-
-		err = rabbitmq.PublishMessage(string(orderMessageBytes))
-		if err != nil {
-			return err
-		}
-
+	orderJSON, err := json.Marshal(neworder)
+	if err != nil {
+		return err
 	}
-	return err
+	fmt.Println(string(orderJSON))
+
+	result, err := o.ordercollection.InsertOne(o.ctx, neworder)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Inserted document ID: %v\n", result.InsertedID)
+
+	orderMessage := map[string]interface{}{
+		"user_id":  neworder.UserId.String(),
+		"order_id": neworder.Id.String(),
+	}
+
+	orderMessageBytes, err := json.Marshal(orderMessage)
+	if err != nil {
+		return err
+	}
+
+	err = rabbitmq.PublishMessage(string(orderMessageBytes), "new")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DeleteOrder implements OrderService.
 func (o *OrderServiceImpl) DeleteOrder(id *uuid.UUID) error {
+	var order Model.Order
 	filter := bson.D{bson.E{Key: "_id", Value: id}}
+	err := o.ordercollection.FindOne(o.ctx, filter).Decode(&order)
+	if err != nil {
+		return err
+	}
+
 	result, _ := o.ordercollection.DeleteOne(o.ctx, filter)
 	if result.DeletedCount == 0 {
 		return errors.New("no order found")
 	}
+
+	orderMessage := map[string]interface{}{
+		"user_id":  order.UserId.String(),
+		"order_id": order.Id.String(),
+	}
+
+	orderMessageBytes, err := json.Marshal(orderMessage)
+	if err != nil {
+		return err
+	}
+
+	err = rabbitmq.PublishMessage(string(orderMessageBytes), "delete")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -68,7 +101,7 @@ func (o *OrderServiceImpl) GetOrders(status *Model.OrderStatus, checkStatus *boo
 	if *checkStatus {
 		cursor, err = o.ordercollection.Find(o.ctx, bson.D{})
 	} else {
-		cursor, err = o.ordercollection.Find(o.ctx, bson.D{bson.E{Key: "status", Value: status}})
+		cursor, err = o.ordercollection.Find(o.ctx, bson.D{bson.E{Key: "status", Value: status.String()}})
 	}
 	if err != nil {
 		return nil, err

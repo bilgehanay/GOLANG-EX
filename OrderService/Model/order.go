@@ -1,6 +1,7 @@
 package Model
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -34,22 +35,22 @@ func NewOrder(userId uuid.UUID, quantity int, price float64) Order {
 	}
 }
 
-type OrderStatus int
+type OrderStatus string
 
 const (
-	Pending OrderStatus = iota
-	Completed
-	Shipped
-	Cancelled
+	Pending   OrderStatus = "pending"
+	Completed OrderStatus = "completed"
+	Shipped   OrderStatus = "shipped"
+	Cancelled OrderStatus = "cancelled"
 )
 
 func (s OrderStatus) String() string {
-	return [...]string{"Pending", "Completed", "Shipped", "Cancelled"}[s]
+	return string(s)
 }
 
 func ParseOrderStatus(status string) (os OrderStatus, err error, checkStatus bool) {
 	if status == "" {
-		return 0, nil, true
+		return "", nil, true
 	}
 	switch status {
 	case "Pending":
@@ -61,11 +62,28 @@ func ParseOrderStatus(status string) (os OrderStatus, err error, checkStatus boo
 	case "Cancelled":
 		return Cancelled, nil, false
 	default:
-		return 0, errors.New("invalid status"), false
+		return "", errors.New("invalid status"), false
 	}
 }
 
-func (s OrderStatus) MarshalBSONJSON() (bsontype.Type, []byte, error) {
+func (s OrderStatus) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s *OrderStatus) UnmarshalJSON(data []byte) error {
+	var status string
+	if err := json.Unmarshal(data, &status); err != nil {
+		return err
+	}
+	parsedStatus, err, _ := ParseOrderStatus(status)
+	if err != nil {
+		return err
+	}
+	*s = parsedStatus
+	return nil
+}
+
+func (s OrderStatus) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bson.MarshalValue(s.String())
 }
 
@@ -75,19 +93,10 @@ func (s *OrderStatus) UnmarshalBsonValue(t bsontype.Type, data []byte) error {
 	if err != nil {
 		return err
 	}
-
-	switch status {
-	case "Pending":
-		*s = Pending
-	case "Completed":
-		*s = Completed
-	case "Shipped":
-		*s = Shipped
-	case "Cancelled":
-		*s = Cancelled
-	default:
-		return errors.New("invalid status")
+	parsedStatus, err, _ := ParseOrderStatus(status)
+	if err != nil {
+		return err
 	}
-
+	*s = parsedStatus
 	return nil
 }

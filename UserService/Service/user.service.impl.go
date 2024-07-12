@@ -19,7 +19,6 @@ type UserServiceImpl struct {
 	ctx            context.Context
 }
 
-// ListenOrderMessage implements UserService.
 func (u *UserServiceImpl) ListenOrderMessage() {
 	rabbitmq.ConsumeMessages(func(d amqp.Delivery) {
 		var orderMessage map[string]string
@@ -27,6 +26,8 @@ func (u *UserServiceImpl) ListenOrderMessage() {
 			fmt.Println("Error decoding JSON: ", err)
 			return
 		}
+
+		header := d.Type
 
 		userid, err := uuid.Parse(orderMessage["user_id"])
 		if err != nil {
@@ -40,17 +41,44 @@ func (u *UserServiceImpl) ListenOrderMessage() {
 			return
 		}
 
-		filter := bson.D{bson.E{Key: "_id", Value: userid}}
-		update := bson.D{bson.E{Key: "$push", Value: bson.D{bson.E{Key: "orders", Value: orderid}}}}
-
-		_, err = u.usercollection.UpdateOne(u.ctx, filter, update)
-		if err != nil {
-			fmt.Println("Error updating user: ", err)
+		switch header {
+		case "new":
+			err = u.AddOrderToUser(userid, orderid)
+		case "delete":
+			err = u.RemoveOrderFromUser(userid, orderid)
+		default:
+			fmt.Println("Unknown header:", header)
 			return
+		}
+
+		if err != nil {
+			fmt.Println("Error processing order:", err)
 		} else {
-			fmt.Println("Order added to user")
+			fmt.Println("Order processed successfully")
 		}
 	})
+}
+
+func (u *UserServiceImpl) AddOrderToUser(userId uuid.UUID, orderId uuid.UUID) error {
+	filter := bson.D{bson.E{Key: "_id", Value: userId}}
+	update := bson.D{bson.E{Key: "$push", Value: bson.D{bson.E{Key: "orders", Value: orderId}}}}
+
+	_, err := u.usercollection.UpdateOne(u.ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("error updating user: %v", err)
+	}
+	return nil
+}
+
+func (u *UserServiceImpl) RemoveOrderFromUser(userId uuid.UUID, orderId uuid.UUID) error {
+	filter := bson.D{bson.E{Key: "_id", Value: userId}}
+	update := bson.D{bson.E{Key: "$pull", Value: bson.D{bson.E{Key: "orders", Value: orderId}}}}
+
+	_, err := u.usercollection.UpdateOne(u.ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("error updating user: %v", err)
+	}
+	return nil
 }
 
 func NewUserService(usercollection *mongo.Collection, ctx context.Context) UserService {

@@ -87,14 +87,20 @@ func (oc *OrderController) UpdateOrder(ctx *gin.Context) {
 
 func (oc *OrderController) UpdateStatus(ctx *gin.Context) {
 	var status_req struct {
-		Id     uuid.UUID `json:"id"`
-		Status Model.OrderStatus
+		Id     uuid.UUID `json:"id" bson:"_id,omitempty"`
+		Status string    `json:"status" bson:"status,omitempty"`
 	}
 	if err := ctx.ShouldBindJSON(&status_req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	err := oc.OrderService.UpdateStatus(&status_req.Id, status_req.Status)
+	orderStatus, err, _ := Model.ParseOrderStatus(status_req.Status)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = oc.OrderService.UpdateStatus(&status_req.Id, orderStatus)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
 		return
@@ -112,6 +118,7 @@ func (oc *OrderController) DeleteOrder(ctx *gin.Context) {
 	err = oc.OrderService.DeleteOrder(&orderid)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
