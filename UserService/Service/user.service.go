@@ -11,4 +11,6 @@ type UserService interface {
 	GetUsers() ([]*Model.User, error)
 	UpdateUser(*Model.User) error
 	DeleteUser(*uuid.UUID) error
+
+	ListenOrderMessage()
 }

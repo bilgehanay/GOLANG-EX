@@ -11,13 +11,14 @@ type Address struct {
 }
 
 type User struct {
-	Id       uuid.UUID `json:"id" bson:"_id"`
-	Name     string    `json:"name" bson:"name" validate:"required,min=2,max=32"`
-	Surname  string    `json:"surname" bson:"surname" validate:"required,min=2,max=32"`
-	Email    string    `json:"email" bson:"email" validate:"required,email"`
-	Password string    `json:"password" bson:"password" validate:"required,min=6,max=32"`
-	Age      int       `json:"age" bson:"age" validate:"required,min=18,max=120"`
-	Address  Address   `json:"address" bson:"address,omitempty" validate:"required"`
+	Id       uuid.UUID   `json:"id" bson:"_id"`
+	Name     string      `json:"name" bson:"name" validate:"required,min=2,max=32"`
+	Surname  string      `json:"surname" bson:"surname" validate:"required,min=2,max=32"`
+	Email    string      `json:"email" bson:"email" validate:"required,email"`
+	Password string      `json:"password" bson:"password" validate:"required,min=6,max=32"`
+	Age      int         `json:"age" bson:"age" validate:"required,min=18,max=120"`
+	Address  Address     `json:"address" bson:"address,omitempty" validate:"required"`
+	Orders   []uuid.UUID `json:"orders" bson:"orders,omitempty"`
 }
 
 func NewUser(name, surname, email, password string, age int, address Address) User {

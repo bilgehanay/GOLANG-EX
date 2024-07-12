@@ -6,6 +6,7 @@ import (
 	"log"
 
 	controller "deneme.com/bng-go/Controller"
+	rabbitmq "deneme.com/bng-go/RabbitMQ"
 	service "deneme.com/bng-go/Service"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,10 +43,12 @@ func init() {
 	orderService = service.NewOrderService(ordercollection, ctx)
 	orderController = controller.New(orderService)
 	server = gin.Default()
+	rabbitmq.InitRabbitMQ()
 }
 
 func main() {
 	defer mongoClient.Disconnect(ctx)
+	defer rabbitmq.Close()
 
 	basepath := server.Group("/api/v1")
 	orderController.RegisterOrderRoutes(basepath)

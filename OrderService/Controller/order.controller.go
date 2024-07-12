@@ -28,6 +28,7 @@ func (oc *OrderController) CreateOrder(ctx *gin.Context) {
 	err := oc.OrderService.CreateOrder(&order)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
@@ -79,6 +80,7 @@ func (oc *OrderController) UpdateOrder(ctx *gin.Context) {
 	err = oc.OrderService.UpdateOrder(&orderid, update_req)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
@@ -95,6 +97,7 @@ func (oc *OrderController) UpdateStatus(ctx *gin.Context) {
 	err := oc.OrderService.UpdateStatus(&status_req.Id, status_req.Status)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
@@ -116,8 +119,8 @@ func (oc *OrderController) DeleteOrder(ctx *gin.Context) {
 func (oc *OrderController) RegisterOrderRoutes(rg *gin.RouterGroup) {
 	orderroute := rg.Group("/order")
 	orderroute.POST("", oc.CreateOrder)
-	orderroute.GET(":id", oc.GetOrder)
-	orderroute.GET(":status", oc.GetOrders)
+	orderroute.GET("/:id", oc.GetOrder)
+	orderroute.GET("/list/:status", oc.GetOrders)
 	orderroute.GET("", oc.GetOrders)
 	orderroute.PUT("/:id", oc.UpdateOrder)
 	orderroute.PUT("/status", oc.UpdateStatus)

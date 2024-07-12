@@ -2,10 +2,14 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"deneme.com/bng-go/Model"
+	rabbitmq "deneme.com/bng-go/RabbitMQ"
 	"github.com/google/uuid"
+	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -13,6 +17,40 @@ import (
 type UserServiceImpl struct {
 	usercollection *mongo.Collection
 	ctx            context.Context
+}
+
+// ListenOrderMessage implements UserService.
+func (u *UserServiceImpl) ListenOrderMessage() {
+	rabbitmq.ConsumeMessages(func(d amqp.Delivery) {
+		var orderMessage map[string]string
+		if err := json.Unmarshal(d.Body, &orderMessage); err != nil {
+			fmt.Println("Error decoding JSON: ", err)
+			return
+		}
+
+		userid, err := uuid.Parse(orderMessage["user_id"])
+		if err != nil {
+			fmt.Println("Error parsing UUID: ", err)
+			return
+		}
+
+		orderid, err := uuid.Parse(orderMessage["order_id"])
+		if err != nil {
+			fmt.Println("Error parsing UUID: ", err)
+			return
+		}
+
+		filter := bson.D{bson.E{Key: "_id", Value: userid}}
+		update := bson.D{bson.E{Key: "$push", Value: bson.D{bson.E{Key: "orders", Value: orderid}}}}
+
+		_, err = u.usercollection.UpdateOne(u.ctx, filter, update)
+		if err != nil {
+			fmt.Println("Error updating user: ", err)
+			return
+		} else {
+			fmt.Println("Order added to user")
+		}
+	})
 }
 
 func NewUserService(usercollection *mongo.Collection, ctx context.Context) UserService {

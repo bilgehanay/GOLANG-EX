@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"deneme.com/bng-go/Model"
+	rabbitmq "deneme.com/bng-go/RabbitMQ"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,6 +22,23 @@ type OrderServiceImpl struct {
 func (o *OrderServiceImpl) CreateOrder(order *Model.Order) error {
 	neworder := Model.NewOrder(order.UserId, order.Quantity, order.Price)
 	_, err := o.ordercollection.InsertOne(o.ctx, neworder)
+	if err == nil {
+		orderMessage := map[string]interface{}{
+			"user_id":  neworder.UserId.String(),
+			"order_id": neworder.Id.String(),
+		}
+
+		orderMessageBytes, err := json.Marshal(orderMessage)
+		if err != nil {
+			return err
+		}
+
+		err = rabbitmq.PublishMessage(string(orderMessageBytes))
+		if err != nil {
+			return err
+		}
+
+	}
 	return err
 }
 
