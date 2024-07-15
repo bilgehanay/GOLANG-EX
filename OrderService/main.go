@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
+	"os"
 
 	controller "deneme.com/bng-go/Controller"
 	rabbitmq "deneme.com/bng-go/RabbitMQ"
@@ -23,6 +25,14 @@ var (
 	mongoClient     *mongo.Client
 	err             error
 )
+
+func env(key string) string {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	return os.Getenv(key)
+}
 
 func init() {
 	ctx = context.TODO()
@@ -53,5 +63,5 @@ func main() {
 	basepath := server.Group("/api/v1")
 	orderController.RegisterOrderRoutes(basepath)
 
-	log.Fatal(server.Run(":9090"))
+	log.Fatal(server.Run(env("PORT")))
 }

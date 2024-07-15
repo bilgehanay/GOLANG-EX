@@ -19,6 +19,20 @@ type UserServiceImpl struct {
 	ctx            context.Context
 }
 
+func (u *UserServiceImpl) LoginUser(email, password string) (uuid.UUID, error) {
+	fmt.Println(password)
+	var user *Model.User
+	filter := bson.D{bson.E{Key: "email", Value: email}}
+	err := u.usercollection.FindOne(u.ctx, filter).Decode(&user)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if user.Password != password {
+		return uuid.Nil, errors.New("wrong password")
+	}
+	return user.Id, nil
+}
+
 func (u *UserServiceImpl) ListenOrderMessage() {
 	rabbitmq.ConsumeMessages(func(d amqp.Delivery) {
 		var orderMessage map[string]string

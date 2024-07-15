@@ -12,5 +12,7 @@ type UserService interface {
 	UpdateUser(*Model.User) error
 	DeleteUser(*uuid.UUID) error
 
+	LoginUser(email, password string) (uuid.UUID, error)
+
 	ListenOrderMessage()
 }
