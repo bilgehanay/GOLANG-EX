@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"deneme.com/bng-go/Middleware"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
@@ -137,6 +138,7 @@ func (uc *UserController) VerifyToken(ctx *gin.Context) {
 
 func (uc *UserController) RegisterUserRoutes(rg *gin.RouterGroup) {
 	userroute := rg.Group("/user")
+	userroute.Use(Middleware.RateLimit())
 	userroute.POST("", uc.CreateUser)
 	userroute.GET("/:id", uc.GetUser)
 	userroute.GET("", uc.GetUsers)
