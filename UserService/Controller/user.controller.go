@@ -142,8 +142,8 @@ func (uc *UserController) RegisterUserRoutes(rg *gin.RouterGroup) {
 	userroute.POST("", uc.CreateUser)
 	userroute.GET("/:id", uc.GetUser)
 	userroute.GET("", uc.GetUsers)
-	userroute.PUT("", uc.UpdateUser)
-	userroute.DELETE("/:id", uc.DeleteUser)
+	userroute.PUT("", Middleware.VerifyJWT(), uc.UpdateUser)
+	userroute.DELETE("/:id", Middleware.VerifyJWT(), uc.DeleteUser)
 
 	userroute.POST("/login", uc.Login)
 	userroute.GET("/verify/:token", uc.VerifyToken)

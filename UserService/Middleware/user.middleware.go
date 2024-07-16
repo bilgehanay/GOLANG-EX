@@ -1,6 +1,7 @@
 package Middleware
 
 import (
+	service "deneme.com/bng-go/Service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"sync"
@@ -36,6 +37,23 @@ func RateLimit() gin.HandlerFunc {
 
 			ipRequestCounts[ip] -= 1
 		})
+		c.Next()
+	}
+}
+
+func VerifyJWT() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Request.Header.Get("token")
+		if err := c.ShouldBindHeader(&token); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+			return
+		}
+
+		_, err := service.ParseAccessToken(token)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+			return
+		}
 		c.Next()
 	}
 }
