@@ -9,9 +9,9 @@ import (
 var conn *amqp.Connection
 var channel *amqp.Channel
 
-func InitRabbitMQ() {
+func InitRabbitMQ(connection string) {
 	var err error
-	conn, err = amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err = amqp.Dial(connection)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}

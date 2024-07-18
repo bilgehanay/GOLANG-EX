@@ -1,3 +1,4 @@
 go.mod
 go.sum
-.env
+conf_dev.json
+conf_prod.json

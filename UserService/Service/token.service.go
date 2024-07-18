@@ -1,10 +1,10 @@
 package service
 
 import (
+	"deneme.com/bng-go/Init"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"os"
 )
 
 type UserClaims struct {
@@ -16,12 +16,12 @@ type UserClaims struct {
 
 func NewAccessToken(claims UserClaims) (string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return accessToken.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
+	return accessToken.SignedString([]byte(Init.SetConfig.JWT.Secret))
 }
 
 func ParseAccessToken(accessToken string) (*UserClaims, error) {
 	parsedAccessToken, err := jwt.ParseWithClaims(accessToken, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ACCESS_SECRET")), nil
+		return []byte(Init.SetConfig.JWT.Secret), nil
 	})
 
 	if err != nil {
